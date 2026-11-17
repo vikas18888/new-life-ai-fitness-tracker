@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Life - AI Fitness Tracker</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- ===== Onboarding popup ===== -->
+  <div class="overlay hidden" id="onboarding">
+    <div class="modal">
+      <h2>Welcome to NEW <span>LIFE</span></h2>
+      <p class="modal-sub">Enter your details so we can calculate the right calorie and water targets for you.</p>
+      <form id="profileForm">
+        <div class="form-grid">
+          <div class="field full">
+            <label for="pName">Name</label>
+            <input type="text" id="pName" placeholder="Your name" required maxlength="30">
+          </div>
+          <div class="field">
+            <label for="pAge">Age (years)</label>
+            <input type="number" id="pAge" placeholder="22" min="14" max="90" required>
+          </div>
+          <div class="field">
+            <label for="pGender">Gender</label>
+            <select id="pGender" required>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="pHeight">Height (cm)</label>
+            <input type="number" id="pHeight" placeholder="170" min="120" max="230" required>
+          </div>
+          <div class="field">
+            <label for="pWeight">Weight (kg)</label>
+            <input type="number" id="pWeight" placeholder="70" min="30" max="250" step="0.1" required>
+          </div>
+          <div class="field full">
+            <label for="pGoal">Your Goal</label>
+            <select id="pGoal" required>
+              <option value="lose">Lose weight / fat</option>
+              <option value="maintain">Stay fit (maintain weight)</option>
+              <option value="gain">Build muscle / gain weight</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="pActivity">Daily Activity Level</label>
+            <select id="pActivity" required>
+              <option value="sedentary">Sedentary (desk job, minimal walking)</option>
+              <option value="light">Light (exercise 1–3 days/week)</option>
+              <option value="moderate" selected>Moderate (exercise 3–5 days/week)</option>
+              <option value="active">Very Active (heavy exercise daily)</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn">Create My Plan 🚀</button>
+        <button type="button" class="btn-link" id="cancelProfile">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+      <h1>NEW <span>LIFE</span></h1>
+      <p>Transform Your Body with AI-Powered Tracking</p>
+    </header>
+
+    <!-- ===== Profile bar ===== -->
+    <div class="card profile-bar" id="profileBar">
+      <div class="profile-text">
+        <strong id="profileName">Hi 👋</strong>
+        <span id="profileInfo"></span>
+      </div>
+      <button class="btn btn-small" id="editProfileBtn">Edit Profile</button>
+    </div>
+
+    <!-- ===== Stats ===== -->
+    <div class="grid-container">
+      <div class="card stat-card">
+        <h3>Daily Calorie Target</h3>
+        <p class="stat-number" id="calTargetVal">-- <small>kcal</small></p>
+        <p class="stat-sub" id="calTargetSub">Complete your profile</p>
+      </div>
+      <div class="card stat-card">
+        <h3>Calories Burned Today</h3>
+        <p class="stat-number" id="calBurnedVal">0 <small>kcal</small></p>
+        <p class="stat-sub">Estimated from workouts</p>
+      </div>
+      <div class="card stat-card">
+        <h3>Water Intake</h3>
+        <p class="stat-number" id="waterVal">0 <small>L</small></p>
+        <div class="progress"><div class="progress-bar" id="waterBar"></div></div>
+        <div class="water-btns">
+          <button class="btn btn-small" id="addWaterBtn">+ 250 ml</button>
+          <button class="btn btn-small btn-ghost" id="undoWaterBtn">Undo</button>
+        </div>
+      </div>
+      <div class="card stat-card">
+        <h3>Workouts Today</h3>
+        <p class="stat-number" id="workoutVal">0 <small>exercises</small></p>
+        <p class="stat-sub">Logged exercises today</p>
+      </div>
+    </div>
+
+    <!-- ===== Workout Logger & AI Coach ===== -->
+    <div class="main-grid">
+      <div class="card">
+        <h2>Log Daily Workout</h2>
+        <form id="workoutForm">
+          <input type="text" id="exerciseInput" placeholder="Exercise Name (e.g. Bench Press)" required>
+          <input type="number" id="setsInput" placeholder="Sets" min="1" required>
+          <input type="number" id="repsInput" placeholder="Reps" min="1" required>
+          <button type="submit" class="btn">Add Workout</button>
+        </form>
+        <ul id="workoutList" class="workout-list"></ul>
+      </div>
+
+      <div class="card ai-card">
+        <h2>New Life AI Coach ⚡</h2>
+        <div class="chat-box" id="chatBox">
+          <div class="bot-msg">Welcome to New Life! I'm your AI Fitness Assistant. Ask me anything about workouts or diet plans!</div>
+        </div>
+        <div class="chat-input-container">
+          <input type="text" id="aiInput" placeholder="Ask AI coach (e.g. High protein diet tips)...">
+          <button id="askAiBtn" class="btn btn-silver">Ask AI</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== Weekly Workout Plan (day wise) ===== -->
+  <div class="app-container" style="padding-top:0">
+    <div class="card planner-card">
+      <div class="tracker-head">
+        <h2>🗓️ Weekly Workout Plan</h2>
+        <span class="tracker-date" id="plWeekSummary"></span>
+      </div>
+
+      <div class="plan-top">
+        <select id="plTemplate">
+          <option value="fullbody">Full Body (3 days / week) - Beginner</option>
+          <option value="home">Home Workout (4 days) - No Equipment</option>
+          <option value="upperlower">Upper / Lower (4 days)</option>
+          <option value="ppl">Push / Pull / Legs (6 days)</option>
+          <option value="empty">Empty Plan (Build your own)</option>
+        </select>
+        <button type="button" class="btn btn-small" id="plApply">Apply Plan</button>
+      </div>
+
+      <div class="day-tabs" id="plTabs"></div>
+
+      <div class="day-panel">
+        <div class="day-head">
+          <input type="text" id="plTitle" maxlength="30" placeholder="Day title (e.g. Chest + Triceps)">
+          <span class="day-badge" id="plBadge"></span>
+        </div>
+        <div class="progress"><div class="progress-bar" id="plBar"></div></div>
+        <p class="stat-sub" id="plProgText"></p>
+
+        <ul class="plan-list" id="plList"></ul>
+
+        <form id="plAddForm" class="plan-add" novalidate>
+          <input type="text" id="plExName" placeholder="Exercise (e.g. Squats)">
+          <input type="number" id="plExSets" placeholder="Sets">
+          <input type="number" id="plExReps" placeholder="Reps">
+          <button type="submit" class="btn btn-small">+ Add</button>
+        </form>
+        <p id="plMsg" class="tracker-msg"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Meal Tracker ===== -->
+  <div class="app-container" style="padding-top:0">
+    <div class="card meal-card">
+      <div class="tracker-head">
+        <h2>🍽️ Meal Tracker</h2>
+        <span class="tracker-date" id="mlDate"></span>
+      </div>
+
+      <div class="tracker-summary">
+        <div class="mini"><span>🔥 Calories</span><strong id="mlKcal">0 kcal</strong></div>
+        <div class="mini"><span>💪 Protein</span><strong id="mlProt">0 g</strong></div>
+        <div class="mini"><span>🍚 Carbs</span><strong id="mlCarb">0 g</strong></div>
+        <div class="mini"><span>🥑 Fat</span><strong id="mlFat">0 g</strong></div>
+      </div>
+
+      <div class="progress"><div class="progress-bar" id="mlKcalBar"></div></div>
+      <p class="stat-sub" id="mlKcalNote"></p>
+      <div class="progress"><div class="progress-bar" id="mlProtBar"></div></div>
+      <p class="stat-sub" id="mlProtNote"></p>
+
+      <form id="mealForm" class="meal-form" novalidate>
+        <div class="meal-row">
+          <select id="mlType">
+            <option value="breakfast">🌅 Breakfast</option>
+            <option value="lunch">☀️ Lunch</option>
+            <option value="snack">🍎 Snack</option>
+            <option value="dinner">🌙 Dinner</option>
+          </select>
+          <select id="mlFood"></select>
+          <input type="number" id="mlServings" value="1" min="0.25" max="20" step="0.25" title="Number of servings">
+          <button type="submit" class="btn btn-small">+ Add</button>
+        </div>
+
+        <div class="meal-custom" id="mlCustom" style="display:none">
+          <input type="text" id="mlCName" placeholder="Food name">
+          <input type="number" id="mlCKcal" placeholder="Calories (per serving)">
+          <input type="number" id="mlCProt" placeholder="Protein (g)">
+          <input type="number" id="mlCCarb" placeholder="Carbs (g)">
+          <input type="number" id="mlCFat" placeholder="Fat (g)">
+        </div>
+        <p id="mlMsg" class="tracker-msg"></p>
+      </form>
+
+      <div id="mlList"></div>
+
+      <button type="button" class="btn btn-ghost btn-small" id="mlToTracker" style="margin-top:14px">
+        Send today's calories to Daily Tracker →
+      </button>
+      <p class="stat-sub">Calories and macros are estimates and may vary slightly based on homemade recipes.</p>
+    </div>
+  </div>
+
+  <!-- ===== Daily Fitness Tracker ===== -->
+  <div class="app-container" style="padding-top:0">
+    <div class="card tracker-card">
+      <div class="tracker-head">
+        <h2>📅 Daily Fitness Tracker</h2>
+        <span class="tracker-date" id="dtDate"></span>
+      </div>
+
+      <div class="tracker-summary">
+        <div class="mini"><span>🔥 Streak</span><strong id="dtStreak">0 days</strong></div>
+        <div class="mini"><span>⭐ Today's Score</span><strong id="dtScore">0/100</strong></div>
+        <div class="mini"><span>💧 Water</span><strong id="dtWater">0 L</strong></div>
+        <div class="mini"><span>🏋️ Workouts</span><strong id="dtWorkouts">0</strong></div>
+      </div>
+
+      <form id="dailyForm" novalidate>
+        <div class="tracker-form">
+          <div class="field">
+            <label for="dtWeight">Today's Weight (kg)</label>
+            <input type="number" id="dtWeight" step="0.1" placeholder="70">
+          </div>
+          <div class="field">
+            <label for="dtSteps">Steps</label>
+            <input type="number" id="dtSteps" placeholder="8000">
+          </div>
+          <div class="field">
+            <label for="dtSleep">Sleep (hours)</label>
+            <input type="number" id="dtSleep" step="0.5" placeholder="7">
+          </div>
+          <div class="field">
+            <label for="dtCalories">Calories Consumed (kcal)</label>
+            <input type="number" id="dtCalories" placeholder="2000">
+          </div>
+        </div>
+        <p id="dtMsg" class="tracker-msg"></p>
+        <button type="submit" class="btn">Save Today's Log ✅</button>
+      </form>
+
+      <div class="chart-head">
+        <h3>Last 7 Days</h3>
+        <select id="dtMetric">
+          <option value="weight">Weight (kg)</option>
+          <option value="steps">Steps</option>
+          <option value="sleep">Sleep (hrs)</option>
+          <option value="calories">Calories Consumed</option>
+          <option value="water">Water (L)</option>
+          <option value="score">Daily Score</option>
+        </select>
+      </div>
+      <div class="chart-wrap"><canvas id="dtChart"></canvas></div>
+
+      <h3 class="history-title">History</h3>
+      <ul id="dtHistory" class="history-list"></ul>
+    </div>
+  </div>
+
+  <!-- Firebase & App scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script src="app.js"></script>
+  <script src="tracker.js"></script>
+  <script src="planner.js"></script>
+  <script src="meal.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>
